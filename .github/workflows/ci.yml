@@ -1,0 +1,40 @@
+# Drop — testes a cada push: o relay (Python), o protocolo e o QR do
+# navegador (Node), e o build da imagem.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  testes:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Dependências
+        run: |
+          python -m pip install --require-hashes --only-binary=:all: -r requirements.txt
+          python -m pip install httpx
+
+      - name: Relay
+        run: PYTHONPATH=app python -m unittest discover -s tests -v
+
+      - name: Protocolo e QR
+        run: node --test tests/*.test.mjs
+
+  imagem:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t drop .

@@ -1,0 +1,40 @@
+# Drop: texto e arquivos (até 25 MiB) entre dois navegadores, cifrados de ponta
+# a ponta. Sem conta e sem disco. Guia: README.md.
+#
+# Uma porta só (WEB_PORT, 8080 por padrão): ponha um proxy com HTTPS na frente
+# (a câmera e o WebCrypto do navegador exigem HTTPS) que mande o X-Real-IP.
+# O container não precisa de nada além dela: sem volumes e sem outros
+# serviços. Para isolá-lo de vez, deixe-o numa rede `internal: true` que só o
+# proxy alcance (veja o README).
+services:
+  drop:
+    build:
+      context: .
+    container_name: drop
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=1m
+    pids_limit: 64
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 1.0
+    ulimits:
+      nofile: 2048
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+    ports:
+      - "${WEB_PORT:-8080}:8000"
+    networks:
+      - drop-web
+
+networks:
+  drop-web:
+    name: drop-web
